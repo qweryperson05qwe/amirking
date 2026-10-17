@@ -1,4 +1,4 @@
--- SOI-HUB v5.3 — Auto Plane Deployment entegre
+-- vip hub v5.3 — Auto Plane Deployment entegre
 -- Compatibility polyfill
 if not table.find then
     table.find = function(t, val)
@@ -16,7 +16,6 @@ if not task then
     }
 end
 
-
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService       = game:GetService("HttpService")
@@ -24,7 +23,6 @@ local CoreGui           = game:GetService("CoreGui")
 local Lighting          = game:GetService("Lighting")
 local TweenService      = game:GetService("TweenService")
 local LocalPlayer       = Players.LocalPlayer
-
 -- ═══ MAIN ENGINE ══════════════════════════════════════════════
 local function startMainScript()
     local PurchaseFactory   = ReplicatedStorage.Cities.PurchaseFactory
@@ -39,24 +37,20 @@ local function startMainScript()
     local PreviewPath       = require(LocalPlayer.PlayerScripts.PlayerControls.PreviewPath)
     local Map               = workspace:WaitForChild("Map")
     local AirMap            = workspace:WaitForChild("AirMap")
-
     local function safeFire(r, ...) pcall(function(...) r:FireServer(...) end, ...) end
     local function safeInvoke(r, ...) local ok, a = pcall(function(...) return r:InvokeServer(...) end, ...); return ok and a or false end
     local function numAttr(i, n, f) local v = i and i:GetAttribute(n); return type(v) == "number" and v or (f or 0) end
     local function decodeJ(raw) if not raw then return nil end; local ok, d = pcall(HttpService.JSONDecode, HttpService, raw); return ok and d or nil end
     local function getCountry() local o = LocalPlayer:FindFirstChild("Country"); return o and o.Value or nil end
-
     local ok_ct, CommonTypes = pcall(function() return require(ReplicatedStorage.Common.CommonTypes) end)
     if not ok_ct then CommonTypes = nil end
-
     local PRESETS = {
-        ["Infantry Meta"] = { "Infantry Equipment", "Infantry Attack Equipment", "Infantry Armor", "Anti-Tank", "Support Equipment", "Fortifications", "Industry" },
-        ["Tank Meta"]     = { "Tank Parts", "Tank Turret", "Mechanization", "Anti-Tank", "Support Equipment", "Industry" },
-        ["Air Meta"]      = { "Fighter", "CAS", "Bomber", "Support Equipment", "Industry" },
-        ["Naval Meta"]    = { "Destroyer", "Battleship", "Submarine", "Transport Ship", "Shipyard", "Industry" },
-        ["Nuke Rush"]     = { "Uranium Mining", "Uranium Enrichment", "Nuke", "Nuclear Protection", "Industry" },
+        ["Упор на пехоту"] = { "Infantry Equipment", "Infantry Attack Equipment", "Infantry Armor", "Anti-Tank", "Support Equipment", "Fortifications", "Industry" },
+        ["Упор на танки"]     = { "Tank Parts", "Tank Turret", "Mechanization", "Anti-Tank", "Support Equipment", "Industry" },
+        ["Упор на авиацию"]      = { "Fighter", "CAS", "Bomber", "Support Equipment", "Industry" },
+        ["Упор на флот"]    = { "Destroyer", "Battleship", "Submarine", "Transport Ship", "Shipyard", "Industry" },
+        ["Ядерная программа"]     = { "Uranium Mining", "Uranium Enrichment", "Nuke", "Nuclear Protection", "Industry" },
     }
-
     local State = {
         AutoFactory     = false, AutoProduction = false, AutoGovernment = false,
         AutoArmy        = false, AutoResearch   = false, SmartMovement  = false,
@@ -64,21 +58,17 @@ local function startMainScript()
         AutoDiplomacy   = false, AutoMissile    = false,
         GovernmentMode  = "War", ArmySpawnFocus = "Infantry", ResearchBases  = {},
     }
-
     local function applyPreset(name) local b = PRESETS[name]; if not b then return end; State.ResearchBases = {}; for _, x in pairs(b) do table.insert(State.ResearchBases, x) end end
-
     -- ═══ AUTO NAVAL INVASION ══════════════════════════════════
     local LoadDivisionOnShip   = ReplicatedStorage:WaitForChild("Cities"):WaitForChild("Port"):WaitForChild("LoadDivisionOnShip")
     local TryExitPortWithFleet = ReplicatedStorage:WaitForChild("Cities"):WaitForChild("Port"):WaitForChild("TryExitPortWithFleet")
     local PreviewPath_naval    = require(LocalPlayer.PlayerScripts.PlayerControls.PreviewPath)
-
     local navalState = {
         phase       = "idle",   -- idle | loading | sailing | landed
         targetTile  = nil,
         usedArmies  = {},
         lastAt      = 0,
     }
-
     local function getEnemyCapitalTile(country)
         local dip = country:FindFirstChild("Diplomacy")
         if not dip then return nil end
@@ -98,7 +88,6 @@ local function startMainScript()
         end
         return nil
     end
-
     local function getBestInfantry(country, myHex, count)
         local units = {}
         for _, tile in ipairs(Map:GetChildren()) do
@@ -120,7 +109,6 @@ local function startMainScript()
         end
         return result
     end
-
     local function getTransportShips(country)
         local ships = {}
         local cities = country:FindFirstChild("Cities")
@@ -142,7 +130,6 @@ local function startMainScript()
         end
         return ships
     end
-
     local function getPortTile(city)
         local tileName = tostring(city:GetAttribute("tileName") or "")
         return Map:FindFirstChild(tileName)
@@ -157,7 +144,6 @@ local function startMainScript()
         end
         return nil
     end
-
     local function autoNavalTick(snap)
         if not State.AutoNaval then return end
         if os.clock() - navalState.lastAt < 5 then return end
@@ -166,7 +152,6 @@ local function startMainScript()
         local country = snap.country
         local myHex   = snap.myColorHex
         local myColor = snap.myColor
-
         -- Düşman capital'ini bul
         local targetTile, enemyCountry = getEnemyCapitalTile(country)
         if not targetTile then
@@ -180,7 +165,6 @@ local function startMainScript()
             print("[NAVAL] Transport ship yok — bekliyor")
             return
         end
-
         -- En iyi infantry ordularını al (ship kapasitesi kadar)
         local totalCap = 0
         for _, t in ipairs(transports) do totalCap = totalCap + t.freeSlots end
@@ -190,7 +174,6 @@ local function startMainScript()
             print("[NAVAL] Yüklenebilir infantry yok")
             return
         end
-
         -- Phase 1: Infantry'yi porta hareket ettir ve gemiye yükle
         local allowed = {[myHex] = true}
         local dip = country:FindFirstChild("Diplomacy")
@@ -200,7 +183,6 @@ local function startMainScript()
                 if e.Value then allowed[e.Value:GetAttribute("color"):ToHex()] = true end
             end end
         end
-
         local loadedCount = 0
         for _, transport in ipairs(transports) do
             if loadedCount >= #infantry then break end
@@ -211,7 +193,6 @@ local function startMainScript()
                 local unitIdx = loadedCount + 1
                 if unitIdx > #infantry then break end
                 local unit = infantry[unitIdx]
-
                 -- Önce porta hareket et
                 if unit.tile ~= portTile then
                     local path = PreviewPath_naval.ComputePath(unit.tile, portTile, allowed)
@@ -225,7 +206,6 @@ local function startMainScript()
                         end
                     end
                 end
-
                 -- Gemiye yükle
                 local loadOk = pcall(function()
                     LoadDivisionOnShip:FireServer(transport.ship)
@@ -237,7 +217,6 @@ local function startMainScript()
                     task.wait(0.3)
                 end
             end
-
             -- Gemi dolu veya yükledik — limandan çık
             if loadedCount > 0 then
                 task.wait(1)
@@ -253,7 +232,6 @@ local function startMainScript()
                 end
             end
         end
-
         -- Phase 2: Denizde olan transport'lar hedef kıyısına varınca MoveTroop
         -- Gemi hedef tile'a komşu sea tile'ına gelince iniş yap
         task.spawn(function()
@@ -264,18 +242,15 @@ local function startMainScript()
                 warn("[NAVAL] Hedef tile'a komşu sea tile yok")
                 return
             end
-
             -- Çıkartma yeri — hedef capital veya en yakın düşman kıyı tile'ı
             -- MoveTroop ile denizden karaas geçiş: deniz → düşman tile
             local landingAllowed = {}
             for k, v in pairs(allowed) do landingAllowed[k] = v end
-
             -- Buradaki MoveTroop çağrısı gemi kıyıya yanaştığında tetiklenir
             -- Oyunda gemi otomatik hareket eder, biz sadece unload zamanını bekleriz
             print("[NAVAL] Fleet sailing — invasion will complete automatically when ships arrive")
         end)
     end
-
     -- ═══════════════════════════════════════════════════════
     -- AUTO DIPLOMACY
     -- Justify war against weak neighbors, then declare war
@@ -285,7 +260,6 @@ local function startMainScript()
     local TryDeclareWar  = game:GetService("ReplicatedStorage").Diplomacy.TryDeclareWar
     local TrySendTreaty  = game:GetService("ReplicatedStorage").Diplomacy.TrySendTreaty
     local Countries      = game:GetService("ReplicatedStorage"):WaitForChild("Countries")
-
     local dipState = {
         lastJustifyAt   = 0,
         lastDeclareAt   = 0,
@@ -294,7 +268,6 @@ local function startMainScript()
     }
 
     local function autoMissileTick(snap) end  -- forward declare, defined below
-
     local function autoRealDipTick(snap)
         if not State.AutoDiplomacy then return end
         local country = snap.country
@@ -302,7 +275,6 @@ local function startMainScript()
         local myHex   = myColor and myColor:ToHex() or ""
         local money   = snap.economy.money
         local Map     = workspace.Map
-
         -- Power assessment: total attack power of all our armies
         local myPower = 0
         for _, tile in ipairs((tileCache.byHex[myHex] or {})) do
@@ -315,7 +287,6 @@ local function startMainScript()
 
         local dip = country:FindFirstChild("Diplomacy")
         if not dip then return end
-
         -- ── AUTO PEACE: if we are losing badly, send peace treaty ──
         if os.clock() - dipState.lastPeaceAt > 60 then
             local enemies = dip:FindFirstChild("Enemies")
@@ -345,7 +316,6 @@ local function startMainScript()
                 end
             end
         end
-
         -- ── AUTO JUSTIFY: find weak neighbor not at war with us ──
         if os.clock() - dipState.lastJustifyAt < 45 then return end
 
@@ -356,13 +326,11 @@ local function startMainScript()
         -- Find weakest country bordering us that we're not at war with
         local bestTarget = nil
         local bestScore  = math.huge
-
         for _, eCountry in ipairs(Countries:GetChildren()) do
             local eColor = eCountry:GetAttribute("color")
             if not eColor then continue end
             local eHex = eColor:ToHex()
             if eHex == myHex then continue end
-
             -- Already at war?
             local alreadyEnemy = false
             local enemies = dip:FindFirstChild("Enemies")
@@ -375,7 +343,6 @@ local function startMainScript()
 
             -- Already justifying?
             if dipState.justifying[eCountry.Name] then continue end
-
             -- Is this country neighboring us?
             local isNeighbor = false
             for _, tile in ipairs((tileCache.byHex[eHex] or {})) do
@@ -390,7 +357,6 @@ local function startMainScript()
                 if isNeighbor then break end
             end
             if not isNeighbor then continue end
-
             -- Their power
             local ePower = 0
             local eTiles = #(tileCache.byHex[eHex] or {})
@@ -401,7 +367,6 @@ local function startMainScript()
                     ePower = ePower + h * a
                 end
             end
-
             -- Only target weaker countries (we have 1.5x their power)
             if myPower < ePower * 1.5 then continue end
 
@@ -412,7 +377,6 @@ local function startMainScript()
                 bestTarget = eCountry
             end
         end
-
         if bestTarget then
             local ok, err = pcall(function()
                 return TryJustifyWar:InvokeServer(bestTarget)
@@ -425,10 +389,8 @@ local function startMainScript()
                 print("[DIP] Justify failed:", tostring(err))
             end
         end
-
         -- ── AUTO DECLARE: if justification complete, declare war ──
         if os.clock() - dipState.lastDeclareAt < 30 then return end
-
         local justF = dip:FindFirstChild("Justification")
         if justF then
             for _, just in ipairs(justF:GetChildren()) do
@@ -449,7 +411,6 @@ local function startMainScript()
             end
         end
     end
-
     -- ═══════════════════════════════════════════════════════
     -- AUTO MISSILE LAUNCH
     -- Fires missiles at enemy capitals/high-value tiles
@@ -457,7 +418,6 @@ local function startMainScript()
     -- ═══════════════════════════════════════════════════════
     local LaunchMissileRF = game:GetService("ReplicatedStorage").TileProjects.LaunchMissile
     local lastMissileAt   = 0
-
     local function autoMissileTick(snap)
         if not State.AutoMissile then return end
         if os.clock() - lastMissileAt < 20 then return end -- cooldown
@@ -465,7 +425,6 @@ local function startMainScript()
         local country = snap.country
         local myHex   = snap.myColorHex
         local Map     = workspace.Map
-
         -- Find our missile silos with ammo
         local siloTiles = {}
         local cities = country:FindFirstChild("Cities")
@@ -475,7 +434,6 @@ local function startMainScript()
                 local tile = Map:FindFirstChild(tileName)
                 if not tile then continue end
                 if not tile:GetAttribute("hasMissileSilo") then continue end
-
                 -- Check ammo: get missile item name based on silo level
                 local siloLevel = tile:GetAttribute("missileSiloLevel") or 1
                 local prodF     = country:FindFirstChild("ProductionItems")
@@ -487,7 +445,6 @@ local function startMainScript()
                     local item   = prodF:FindFirstChild(itemName)
                     if item then ammo = item:GetAttribute("stock") or 0 end
                 end
-
                 if ammo > 0 then
                     table.insert(siloTiles, {tile = tile, ammo = ammo, level = siloLevel})
                 end
@@ -499,7 +456,6 @@ local function startMainScript()
         -- Find best target tile (enemy capital first, then urban, then army dense)
         local bestTarget = nil
         local bestScore  = -math.huge
-
         for hex, eCountry in pairs(snap.enemyColors or {}) do
             -- Check silo range
             local maxRange = 0
@@ -511,7 +467,6 @@ local function startMainScript()
                     maxRange = math.max(maxRange, SILO_RANGES[math.clamp(st.level, 1, 3)])
                 end
             end
-
             for _, tile in ipairs((tileCache.byHex[hex] or {})) do
                 -- Score target
                 local score = 0
@@ -522,7 +477,6 @@ local function startMainScript()
                     -- High HP army = good target
                     score = score + (numAttr(m, "health") * numAttr(m, "attack")) * 2
                 end
-
                 -- Range check: distance from nearest silo
                 local inRange = false
                 for _, st in ipairs(siloTiles) do
@@ -532,7 +486,6 @@ local function startMainScript()
                     end
                 end
                 if not inRange then continue end
-
                 if score > bestScore then
                     bestScore  = score
                     bestTarget = tile
@@ -545,7 +498,6 @@ local function startMainScript()
         -- Collect silo tiles array (as expected by server)
         local siloArr = {}
         for _, st in ipairs(siloTiles) do table.insert(siloArr, st.tile) end
-
         local ok, result = pcall(function()
             return LaunchMissileRF:InvokeServer(siloArr, bestTarget, false)  -- false = missile, not nuke
         end)
@@ -557,26 +509,22 @@ local function startMainScript()
             warn("[MSL] Launch failed:", tostring(result))
         end
     end
-
     -- ═══════════════════════════════════════════════════════
     -- AUTO MISSILE SILO BUILDER
     -- ═══════════════════════════════════════════════════════
     local PurchaseMissileSiloRE = ReplicatedStorage:WaitForChild("TileProjects"):WaitForChild("PurchaseMissileSilo")
     local lastSiloAt = 0
-
     local function getSiloLevel(tile)
         if tile:GetAttribute("hasMissileSilo") ~= true then return 0 end
         local lv = tile:GetAttribute("missileSiloLevel")
         return type(lv) == "number" and math.clamp(math.floor(lv), 1, 3) or 1
     end
-
     local function getSiloQueue(tile)
         local q = tile:GetAttribute("missileSiloBuildQueue")
         if type(q) == "number" then return math.max(0, math.floor(q)) end
         if tile:GetAttribute("missileSiloBuildStart") then return 1 end
         return 0
     end
-
     local function getSiloCost(country, nextLevel)
         local techs = country:FindFirstChild("Techs")
         if not techs then return 15000 end
@@ -584,7 +532,6 @@ local function startMainScript()
         local perLv = techs:GetAttribute("missileSiloPricePerLevel") or 10000
         return base + (math.clamp(nextLevel, 1, 3) - 1) * perLv
     end
-
     local function getSiloTechLevel(country)
         -- Ballistic Missiles I/II/III araştırma seviyesi
         local techs = country:FindFirstChild("Techs")
@@ -597,7 +544,6 @@ local function startMainScript()
         end
         return maxLv
     end
-
     -- Tile score: front'tan uzak, capital'a yakın, iç tile'lar tercihli
     local function scoreSiloTile(tile, myHex, frontTiles, protectedTiles)
         local score = 0
@@ -611,7 +557,6 @@ local function startMainScript()
         elseif terrain == "hills" then score = score + 10 end
         return score
     end
-
     local function autoSiloTick(snap)
         if not State.AutoSilo then return end
         if os.clock() - lastSiloAt < 8 then return end -- her 8s max 1 build
@@ -621,7 +566,6 @@ local function startMainScript()
         local myHex = snap.myColorHex
         local techLevel = getSiloTechLevel(country)
         if techLevel == 0 then return end -- hiç silo tech araştırılmamış
-
         -- Front ve protected tile'ları bul
         local frontTiles = snap.frontTiles
         local protectedTiles = {}
@@ -635,7 +579,6 @@ local function startMainScript()
                 end
             end
         end
-
         -- Kendi tile'larını tara, silo build edilebilecekleri bul
         local candidates = {}
         for _, tile in ipairs(Map:GetChildren()) do
@@ -645,7 +588,6 @@ local function startMainScript()
             local curLevel = getSiloLevel(tile)
             local queueCount = getSiloQueue(tile)
             local nextLevel = curLevel + queueCount + 1
-
             -- Max level veya zaten build queue dolu
             if nextLevel > 3 then continue end
             -- Tech seviyesi yeterli mi?
@@ -655,7 +597,6 @@ local function startMainScript()
 
             local cost = getSiloCost(country, nextLevel)
             if money - cost < 20000 then continue end -- 20k reserve
-
             local score = scoreSiloTile(tile, myHex, frontTiles, protectedTiles)
             table.insert(candidates, {tile = tile, cost = cost, nextLevel = nextLevel, score = score})
         end
@@ -667,7 +608,6 @@ local function startMainScript()
             if a.score ~= b.score then return a.score > b.score end
             return a.nextLevel < b.nextLevel
         end)
-
         local best = candidates[1]
         local ok, err = pcall(function()
             PurchaseMissileSiloRE:FireServer(best.tile)
@@ -681,10 +621,8 @@ local function startMainScript()
             warn("[SILO] FireServer error:", tostring(err))
         end
     end
-
     -- ═══ AUTO PLANE DEPLOYMENT ════════════════════════════════
     local planeDeployed = {}
-
     local function getEnemyHexes(country)
         local hexes = {}
             local dip = country:FindFirstChild("Diplomacy")
@@ -699,7 +637,6 @@ local function startMainScript()
         end
         return hexes
     end
-
     local function getMyAirfields(country)
         local result = {}
         local cities = country:FindFirstChild("Cities")
@@ -721,7 +658,6 @@ local function startMainScript()
         end
         return result
     end
-
     local function getEnemyAirTiles(enemyHexes)
         local seen, result = {}, {}
         for _, tile in ipairs(Map:GetChildren()) do
@@ -735,7 +671,6 @@ local function startMainScript()
         end
         return result
     end
-
     local function buildPlaneObj(pd)
         if CommonTypes then
             local obj = CommonTypes.PlaneData.new()
@@ -744,7 +679,6 @@ local function startMainScript()
         end
         return pd
     end
-
     local function autoPlanesTick(snap)
         if not State.AutoPlanes then return end
         local country = snap.country
@@ -754,7 +688,6 @@ local function startMainScript()
         if #airfields == 0 then return end
         local enemyAirTiles = getEnemyAirTiles(enemyHexes)
         if #enemyAirTiles == 0 then return end
-
         for _, af in ipairs(airfields) do
             for _, targetAirTile in ipairs(enemyAirTiles) do
                 local key = af.mapTile.Name .. "_" .. targetAirTile.Name
@@ -772,7 +705,6 @@ local function startMainScript()
             end
         end
     end
-
     -- Savaş değişince cache temizle
     task.spawn(function()
         while true do
@@ -790,7 +722,6 @@ local function startMainScript()
             task.wait(10)
         end
     end)
-
     -- ═══ MEVCUT TERRAIN / TACTICAL ═══════════════════════════
     local TERRAIN_DEF    = { mountain = 4, hills = 2, forest = 1, urban = 1 }
     local ATTACK_RATIO   = 1.1  -- agresif: %10 üstünlük yeterli (eski: 1.4)
@@ -800,7 +731,6 @@ local function startMainScript()
     local TILE_CACHE_TTL = 5
     local PATH_YIELD     = 4
     local MULTI_TARGET   = 4    -- aynı anda max kaç düşmana saldır
-
     local tileCache = { byHex = {}, lastBuild = 0 }
     local function rebuildCache()
         if os.clock() - tileCache.lastBuild < TILE_CACHE_TTL then return end
@@ -813,14 +743,12 @@ local function startMainScript()
         end
         tileCache.lastBuild = os.clock()
     end
-
     local function uPow(m, tile, role)
         if not m then return 0 end
         local h = numAttr(m,"health"); local a = numAttr(m,"attack"); local d = numAttr(m,"defense"); local e = numAttr(m,"experience")
         local em = 1 + e*0.15; local td = tile and (TERRAIN_DEF[tile:GetAttribute("terrain")] or 0) or 0
         if role == "attack" then return h*a*em elseif role == "defend" then return h*(d+td)*em else return h*(a+d+td)*em end
     end
-
     local function buildProtected(country)
         local p = {}; local cf = country:FindFirstChild("Cities"); if not cf then return p end
         for _, city in ipairs(cf:GetChildren()) do
@@ -837,19 +765,16 @@ local function startMainScript()
             end
         end; return p
     end
-
     local function buildAllowed(country, enemyHexes, myHex)
         local a = {[myHex]=true}; local dip = country:FindFirstChild("Diplomacy")
         if dip then for _, fn in ipairs({"Allies","Puppets"}) do local f = dip:FindFirstChild(fn); if f then for _, m in ipairs(f:GetChildren()) do if m.Value then a[m.Value:GetAttribute("color"):ToHex()]=true end end end end end
         for hex in pairs(enemyHexes) do a[hex]=true end; return a
     end
-
     local function encBonus(t, myHex)
         local ns = PreviewPath.neighbours[t]; if not ns then return 1 end
         local c = 0; for _, n in pairs(ns) do if not n.Name:match("^Sea") and n.Color:ToHex()==myHex then c = c + 1 end end
         return c>=3 and 2 or c==2 and 1.3 or 1
     end
-
     local function findRes(from, myHex, myColor, used, prot)
         local frontier={from}; local visited={[from]=true}; local best={score=-1,tile=nil,model=nil}
         for _ = 1, 2 do
@@ -867,26 +792,22 @@ local function startMainScript()
             end; frontier=nf
         end; return best.tile, best.model
     end
-
     -- ═══════════════════════════════════════════════════════════════
     -- SOI LIVE SCANNER API — Real-time army intelligence
     -- Works for ANY country. Exposed via getgenv()._SOI
     -- Updates every 2 seconds in background
     -- ═══════════════════════════════════════════════════════════════
-
     local RS_scan    = game:GetService("ReplicatedStorage")
     local ArmyCm_s   = require(RS_scan.Common.ArmyCommon)
     local TM_s       = ArmyCm_s.terrainModifiers
     local Map_s      = workspace:WaitForChild("Map")
     local PreviewPath_s = require(LocalPlayer.PlayerScripts.PlayerControls.PreviewPath)
-
     local function _troopCls(m)
         if not m then return "Infantry" end
         local tn = m:GetAttribute("troopName") or ""
         if tn:find("Tank") and not tn:find("Anti") then return "Tanks"
         elseif tn:find("Anti") then return "AntiTank" else return "Infantry" end
     end
-
     local function _terrCoef(terrain, cls, stat)
         local t = TM_s[terrain]
         if not t then return 1 end
@@ -899,7 +820,6 @@ local function startMainScript()
         end
         return 1
     end
-
     local function _atkPow(m, tile)
         if not m then return 0 end
         local h=m:GetAttribute("health") or 0
@@ -909,7 +829,6 @@ local function startMainScript()
         local terrain=tile and (tile:GetAttribute("terrain") or "none") or "none"
         return h*a*_terrCoef(terrain,cls,"atk")*(1+exp*0.15)
     end
-
     local function _defPow(m, tile)
         if not m then return 0 end
         local h=m:GetAttribute("health") or 0
@@ -919,13 +838,11 @@ local function startMainScript()
         local terrain=tile and (tile:GetAttribute("terrain") or "none") or "none"
         return h*d*_terrCoef(terrain,cls,"def")*(1+exp*0.15)
     end
-
     -- Main scan function — works for any country
     local function scanCountry(country)
         if not country then return nil end
         local myColor = country:GetAttribute("color")
         local myHex   = myColor and myColor:ToHex() or ""
-
         local dip = country:FindFirstChild("Diplomacy")
         local enemyHexes = {}
         local atWar = false
@@ -938,7 +855,6 @@ local function startMainScript()
                 end
             end end
         end
-
         local result = {
             country     = country.Name,
             atWar       = atWar,
@@ -975,13 +891,11 @@ local function startMainScript()
             enemyArmies = {},
             exposedTiles= {},
         }
-
         -- Scan map
         for _, tile in ipairs(Map_s:GetChildren()) do
             if tile.Name:match("^Sea") then continue end
             local tHex = tile.Color:ToHex()
             local m = tile:FindFirstChildWhichIsA("Model")
-
             if tHex == myHex then
                 result.myTiles = result.myTiles + 1
                 -- Front check
@@ -1026,7 +940,6 @@ local function startMainScript()
                         locked=isFront and threat>0 and st=="Idle",
                     })
                 end
-
             elseif enemyHexes[tHex] then
                 result.enemyTiles = result.enemyTiles + 1
                 if m then
@@ -1072,11 +985,9 @@ local function startMainScript()
                 end
             end
         end
-
         -- Derived stats
         result.coverage   = result.frontTiles>0 and (result.coveredFront/result.frontTiles) or 1
         result.powerRatio = result.enemyDefPow>0 and (result.atkPow/result.enemyDefPow) or 9
-
         -- Sort armies: locked front attackers first, then by atk
         table.sort(result.armies, function(a,b)
             if a.locked ~= b.locked then return a.locked end
@@ -1091,7 +1002,6 @@ local function startMainScript()
         end)
         -- Sort exposed front tiles by threat
         table.sort(result.exposedTiles, function(a,b) return a.threat>b.threat end)
-
         -- Strategy
         local cov = result.coverage
         local pr  = result.powerRatio
@@ -1103,7 +1013,6 @@ local function startMainScript()
 
         return result
     end
-
     -- ═══════════════════════════════════════════════════════════════
     -- LIVE SCANNER — background loop, updates _SOI.data every 2s
     -- ═══════════════════════════════════════════════════════════════
@@ -1114,122 +1023,10 @@ local function startMainScript()
         scan      = scanCountry,  -- call manually: SOI_API.scan(country)
     }
     getgenv()._SOI = SOI_API
-
     -- HUD GUI — Rayfield'ın üstünde, her zaman görünür
-    local function buildHUD()
-        local old = game:GetService("CoreGui"):FindFirstChild("SOI_HUD")
-        if old then old:Destroy() end
-
-        local gui = Instance.new("ScreenGui")
-        gui.Name = "SOI_HUD"; gui.ResetOnSpawn = false
-        gui.DisplayOrder = 999; gui.IgnoreGuiInset = true
-        gui.Parent = game:GetService("CoreGui")
-
-        local frame = Instance.new("Frame", gui)
-        frame.Size = UDim2.new(0, 240, 0, 185)
-        frame.Position = UDim2.new(0, 8, 0, 8)
-        frame.BackgroundColor3 = Color3.fromRGB(8, 8, 14)
-        frame.BackgroundTransparency = 0.08
-        frame.BorderSizePixel = 0
-        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
-        local stroke = Instance.new("UIStroke", frame)
-        stroke.Color = Color3.fromRGB(60, 120, 255); stroke.Thickness = 1.5; stroke.Transparency = 0.4
-
-        -- Title bar
-        local title = Instance.new("TextLabel", frame)
-        title.Size = UDim2.new(1,-8,0,20); title.Position = UDim2.new(0,4,0,4)
-        title.BackgroundTransparency = 1; title.TextXAlignment = Enum.TextXAlignment.Left
-        title.Text = "◈ SOI LIVE SCANNER"; title.TextSize = 11
-        title.Font = Enum.Font.GothamBold; title.TextColor3 = Color3.fromRGB(100,160,255)
-
-        -- Strategy badge
-        local badge = Instance.new("TextLabel", frame)
-        badge.Size = UDim2.new(0,80,0,16); badge.Position = UDim2.new(1,-84,0,5)
-        badge.BackgroundColor3 = Color3.fromRGB(30,60,140); badge.BackgroundTransparency = 0.2
-        badge.BorderSizePixel = 0; badge.Text = "SCANNING..."
-        badge.TextSize = 9; badge.Font = Enum.Font.GothamBold
-        badge.TextColor3 = Color3.fromRGB(255,255,255)
-        Instance.new("UICorner", badge).CornerRadius = UDim.new(0,4)
-
-        -- Divider
-        local div = Instance.new("Frame", frame)
-        div.Size = UDim2.new(1,-16,0,1); div.Position = UDim2.new(0,8,0,26)
-        div.BackgroundColor3 = Color3.fromRGB(60,120,255); div.BackgroundTransparency = 0.6; div.BorderSizePixel=0
-
-        -- Stats labels
-        local function makeLabel(parent, y, color)
-            local lbl = Instance.new("TextLabel", parent)
-            lbl.Size = UDim2.new(1,-8,0,14); lbl.Position = UDim2.new(0,4,0,y)
-            lbl.BackgroundTransparency = 1; lbl.TextXAlignment = Enum.TextXAlignment.Left
-            lbl.TextSize = 11; lbl.Font = Enum.Font.Gotham
-            lbl.TextColor3 = color or Color3.fromRGB(200,200,220)
-            return lbl
-        end
-
-        local lblCountry  = makeLabel(frame, 30,  Color3.fromRGB(255,220,100))
-        local lblArmies   = makeLabel(frame, 46,  Color3.fromRGB(100,220,100))
-        local lblFront    = makeLabel(frame, 62,  Color3.fromRGB(255,180,80))
-        local lblPower    = makeLabel(frame, 78,  Color3.fromRGB(120,200,255))
-        local lblEnemy    = makeLabel(frame, 94,  Color3.fromRGB(255,100,100))
-        local lblSupply   = makeLabel(frame, 110, Color3.fromRGB(200,150,255))
-        local lblComp     = makeLabel(frame, 126, Color3.fromRGB(180,180,200))
-        local lblStatus   = makeLabel(frame, 148, Color3.fromRGB(150,150,170))
-        local lblStrat    = makeLabel(frame, 164, Color3.fromRGB(255,255,255))
-
-        -- Pulse dot
-        local dot = Instance.new("Frame", frame)
-        dot.Size = UDim2.new(0,6,0,6); dot.Position = UDim2.new(0,6,0,8)
-        dot.BackgroundColor3 = Color3.fromRGB(100,255,100); dot.BorderSizePixel=0
-        Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
-
-        local TS = game:GetService("TweenService")
-        local function pulse()
-            TS:Create(dot, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency=0.8}):Play()
-            task.wait(0.6)
-            TS:Create(dot, TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency=0}):Play()
-        end
-
-        local STRAT_COLORS = {
-            FORTIFY   = Color3.fromRGB(255,80,80),
-            DEFENSIVE = Color3.fromRGB(255,150,50),
-            BALANCED  = Color3.fromRGB(255,220,60),
-            AGGRESSIVE= Color3.fromRGB(80,200,255),
-            CRUSH     = Color3.fromRGB(80,255,120),
-        }
-
-        local function updateHUD(d)
-            if not d then
-                lblCountry.Text = "No country selected"
-                return
-            end
-            local cov = math.floor(d.coverage * 100)
-            local pr  = math.floor(d.powerRatio * 100) / 100
-            local stratColor = STRAT_COLORS[d.strategy] or Color3.fromRGB(255,255,255)
-
-            badge.Text = d.strategy
-            badge.TextColor3 = stratColor
-            badge.BackgroundColor3 = Color3.fromRGB(20,20,40)
-
-            lblCountry.Text  = string.format("Country: %s | War: %s", d.country, d.atWar and "YES" or "no")
-            lblArmies.Text   = string.format("Armies: %d  |  Idle:%d  Move:%d  Front:%d", d.total, d.idle, d.moving, d.onFront)
-            lblFront.Text    = string.format("Front: %d tiles  |  Covered:%d  EXPOSED:%d  (%d%%)", d.frontTiles, d.coveredFront, d.exposedFront, cov)
-            lblPower.Text    = string.format("My ATK:%d  DEF:%d  |  Ratio:%.2fx", d.atkPow, d.defPow, pr)
-            lblEnemy.Text    = string.format("Enemy: %d armies  |  ATK:%d  DEF:%d", d.enemyCount, d.enemyAtkPow, d.enemyDefPow)
-            lblSupply.Text   = string.format("Tiles: %d", d.myTiles)
-            lblComp.Text     = string.format("Inf:%d  Tank:%d  Anti:%d", d.infantry, d.tanks, d.antitank)
-            lblStatus.Text   = string.format("Exposed front: %d  |  Enemy empty: %d",
-                d.exposedFront,
-                (function() local c=0; for _,e in ipairs(d.enemyArmies) do if e.empty then c=c+1 end end; return c end)()
-            )
-            lstrat_str = string.format("Strategy: %s  |  Power ratio: %.2f", d.strategy, pr)
-            lblStrat.Text = lstrat_str
-            lblStrat.TextColor3 = stratColor
-        end
-
-        return updateHUD, pulse
-    end
-
-    local updateHUD, pulseHUD = buildHUD()
+    -- Remove a scanner panel left by an earlier run.
+    local oldHUD = CoreGui:FindFirstChild("SOI_HUD")
+    if oldHUD then oldHUD:Destroy() end
 
     -- Background scanner loop
     task.spawn(function()
@@ -1239,19 +1036,12 @@ local function startMainScript()
                 local ok, data = pcall(scanCountry, co2.Value)
                 if ok and data then
                     SOI_API.data = data
-                    pcall(updateHUD, data)
-                    pcall(pulseHUD)
                 end
-            else
-                pcall(updateHUD, nil)
             end
             task.wait(2)
         end
     end)
-
     print("[SOI] Live Scanner active — getgenv()._SOI.data for full data")
-    print("[SOI] HUD: top-left corner")
-
     local function tacticalTickAsync(country)
         -- ═══════════════════════════════════════════════════════
         -- SMART TACTICAL AI v4.0 — Group-based attack
@@ -1262,7 +1052,6 @@ local function startMainScript()
         -- Key insight: attackerCount matters — send multiple armies
         -- to same target AT ONCE for coordinated kills
         -- ═══════════════════════════════════════════════════════
-
         local myColor = country:GetAttribute("color")
         local myHex   = myColor and myColor:ToHex() or ""
 
@@ -1270,7 +1059,6 @@ local function startMainScript()
         local enemyHexes = {}
         local allyHexes  = {}
         local atWar = false
-
         if dip then
             local ef = dip:FindFirstChild("Enemies")
             if ef then
@@ -1293,7 +1081,6 @@ local function startMainScript()
             end
         end
         if not atWar then return end
-
         local allowed = {[myHex]=true}
         for hex in pairs(allyHexes)  do allowed[hex] = true end
         for hex in pairs(enemyHexes) do allowed[hex] = true end
@@ -1303,7 +1090,6 @@ local function startMainScript()
 
         rebuildCache()
         local myTiles = tileCache.byHex[myHex] or {}
-
         local function yPath(from, to)
             pathN = pathN + 1
             if pathN % PATH_YIELD == 0 then task.wait() end
@@ -1314,7 +1100,6 @@ local function startMainScript()
         local RS_tc  = game:GetService("ReplicatedStorage")
         local ArmyCm = require(RS_tc.Common.ArmyCommon)
         local TM     = ArmyCm.terrainModifiers
-
         local function troopCls(m)
             if not m then return "Infantry" end
             local tn = m:GetAttribute("troopName") or ""
@@ -1322,7 +1107,6 @@ local function startMainScript()
             elseif tn:find("Anti") then return "AntiTank"
             else return "Infantry" end
         end
-
         local function tm(terrain, cls, stat)
             local t = TM[terrain]
             if not t then return 1 end
@@ -1336,7 +1120,6 @@ local function startMainScript()
                        (t.InfantryDefenseCoef or 1)
             end
         end
-
         local function atkP(m, tile)
             if not m then return 0 end
             local h=m:GetAttribute("health") or 0
@@ -1346,7 +1129,6 @@ local function startMainScript()
             local ter=tile and (tile:GetAttribute("terrain") or "none") or "none"
             return h * a * tm(ter,cls,"atk") * (1+exp*0.15)
         end
-
         local function defP(m, tile)
             if not m then return 0 end
             local h=m:GetAttribute("health") or 0
@@ -1356,14 +1138,12 @@ local function startMainScript()
             local ter=tile and (tile:GetAttribute("terrain") or "none") or "none"
             return h * d * tm(ter,cls,"def") * (1+exp*0.15)
         end
-
         -- ── BOARD SCAN ─────────────────────────────────────────
         local idleArmies  = {}   -- {tile, model, atk, def, onFront}
         local enemyTargets = {}  -- {tile, model, def, enc, empty, isCapital, sv}
         local frontSet    = {}   -- tile → threat
         local capitalTile = nil
         local totalMyAtk  = 0
-
         -- Capital
         local cf = country:FindFirstChild("Cities")
         if cf then
@@ -1374,7 +1154,6 @@ local function startMainScript()
                 end
             end
         end
-
         -- My tiles
         for _, tile in ipairs(myTiles) do
             local m = tile:FindFirstChildWhichIsA("Model")
@@ -1403,7 +1182,6 @@ local function startMainScript()
                 })
             end
         end
-
         -- Enemy tiles
         local totalEnemyDef = 0
         for hex in pairs(enemyHexes) do
@@ -1411,7 +1189,6 @@ local function startMainScript()
                 local m  = tile:FindFirstChildWhichIsA("Model")
                 local dp = m and defP(m,tile) or 0
                 local ap = m and atkP(m,tile) or 0
-
                 -- Encirclement
                 local ns = PreviewPath.neighbours[tile]
                 local enc, adjMine = 1.0, 0
@@ -1426,13 +1203,11 @@ local function startMainScript()
                     enc = adjMine==0 and 1 or adjMine==1 and 1.4 or
                           adjMine==2 and 2.0 or adjMine==3 and 3.0 or 4.0
                 end
-
                 -- Effective defense (weakened by encirclement, retreat, dying)
                 local effDef = dp / enc
                 local st = m and (m:GetAttribute("state") or "Idle") or "Empty"
                 if m and m:GetAttribute("dieOnNextRetreat") then effDef = effDef * 0.04 end
                 if st == "Retreating" then effDef = effDef * 0.12 end
-
                 -- Strategic value
                 local sv = 10
                 local ter = tile:GetAttribute("terrain") or "none"
@@ -1441,9 +1216,7 @@ local function startMainScript()
                 if tile:GetAttribute("isCapital") then sv = sv + 300 end
                 if tile:GetAttribute("hasCity")   then sv = sv + 30 end
                 sv = sv * enc  -- encircled tiles much more valuable
-
                 totalEnemyDef = totalEnemyDef + dp
-
                 -- Only include tiles adjacent to us (can actually attack)
                 if adjToMe or (m == nil) then
                     table.insert(enemyTargets, {
@@ -1463,7 +1236,6 @@ local function startMainScript()
                 end
             end
         end
-
         -- Sort: empty first, dying second, then by value/difficulty ratio
         table.sort(enemyTargets, function(a, b)
             if a.empty ~= b.empty then return a.empty end
@@ -1475,9 +1247,7 @@ local function startMainScript()
             local rb = b.sv / math.max(b.effDef, 1)
             return ra > rb
         end)
-
         table.sort(idleArmies, function(a, b) return a.atk > b.atk end)
-
         -- ── STRATEGIC MODE ─────────────────────────────────────
         local frontCount, coveredFront = 0, 0
         for tile, _ in pairs(frontSet) do
@@ -1486,7 +1256,6 @@ local function startMainScript()
         end
         local coverage   = frontCount > 0 and (coveredFront/frontCount) or 1.0
         local powerRatio = totalEnemyDef > 0 and (totalMyAtk/totalEnemyDef) or 9.0
-
         local strategy
         if coverage < 0.50 then
             strategy = "FORTIFY"
@@ -1499,7 +1268,6 @@ local function startMainScript()
         else
             strategy = "DEFENSIVE"
         end
-
         -- ── THINK: PLAN ASSIGNMENTS ────────────────────────────
         -- For each target, calculate minimum armies needed to kill
         -- Then assign armies greedily from strongest to weakest target
@@ -1507,7 +1275,6 @@ local function startMainScript()
         local used    = {}
         local actions = 0
         local plan    = {}  -- list of {army, targetTile, path, priority}
-
         -- ┌─ STEP 1: Capital always defended ───────────────────
         if capitalTile and not capitalTile:FindFirstChildWhichIsA("Model") then
             local best = {score=-1, model=nil, path=nil}
@@ -1526,7 +1293,6 @@ local function startMainScript()
                 actions = actions + 1
             end
         end
-
         -- ┌─ STEP 2: Fill exposed front tiles (ALWAYS) ─────────
         -- Sort by threat descending
         local exposedFront = {}
@@ -1536,7 +1302,6 @@ local function startMainScript()
             end
         end
         table.sort(exposedFront, function(a,b) return a.threat > b.threat end)
-
         for _, ef in ipairs(exposedFront) do
             if actions >= MAX_ACTIONS then break end
             -- Find nearest non-front, non-locked army
@@ -1591,7 +1356,6 @@ local function startMainScript()
                 end
             end
         end
-
         if strategy == "FORTIFY" then
             -- In FORTIFY: still attack dying/retreating enemies nearby
             for _, target in ipairs(enemyTargets) do
@@ -1612,7 +1376,6 @@ local function startMainScript()
             for _, p in ipairs(plan) do safeFire(MoveTroop, p.path) end
             return
         end
-
         -- ┌─ STEP 3: ATTACK PLANNING ────────────────────────────
         -- For each target: calculate how many armies we need
         -- Send exactly that many — no more, no less
@@ -1622,7 +1385,6 @@ local function startMainScript()
 
         for _, target in ipairs(enemyTargets) do
             if actions >= MAX_ACTIONS then break end
-
             local needed = {}  -- armies assigned to this target
             local totalAssignedAtk = 0
 
@@ -1631,7 +1393,6 @@ local function startMainScript()
             -- Active defender: need enough to win in reasonable time
             -- Formula: win if totalAtk > effDef * 1.0 (equal = eventual win)
             local atkNeeded = target.empty and 0 or target.effDef * 0.9
-
             -- Find armies that can reach this target
             -- Prefer armies already adjacent (onFront + adjEnemy near target)
             local candidates = {}
@@ -1640,7 +1401,6 @@ local function startMainScript()
                 if capitalTile and a.tile==capitalTile then continue end
                 -- DEFENSIVE: only attack from front
                 if strategy=="DEFENSIVE" and not a.onFront then continue end
-
                 local path = yPath(a.tile, target.tile)
                 if not path then continue end
 
@@ -1653,7 +1413,6 @@ local function startMainScript()
             end
 
             if #candidates == 0 then continue end
-
             -- Sort candidates: adjacent first, then strongest
             table.sort(candidates, function(a,b) return a.score > b.score end)
 
@@ -1663,13 +1422,11 @@ local function startMainScript()
                 if used[cand.army.model] then continue end
                 -- Don't overload: max 3 armies per target
                 if #needed >= 3 then break end
-
                 table.insert(needed, cand)
                 totalAssignedAtk = totalAssignedAtk + cand.army.atk
                 used[cand.army.model] = true
                 actions = actions + 1
             end
-
             if #needed > 0 then
                 for _, cand in ipairs(needed) do
                     table.insert(plan, {
@@ -1681,7 +1438,6 @@ local function startMainScript()
                 targetAssignments[target.tile] = needed
             end
         end
-
         -- ┌─ STEP 4: Develop remaining armies ──────────────────
         -- Any idle army not assigned yet → push toward best front target
         local frontTargets = {}
@@ -1701,13 +1457,11 @@ local function startMainScript()
             if bestTile then table.insert(frontTargets, {tile=bestTile, sv=bestSV, hex=hex}) end
         end
         table.sort(frontTargets, function(a,b) return a.sv>b.sv end)
-
         for _, a in ipairs(idleArmies) do
             if actions >= MAX_ACTIONS then break end
             if used[a.model] then continue end
             if capitalTile and a.tile==capitalTile then continue end
             if prot[a.tile] and not frontSet[a.tile] then continue end
-
             local best = {score=-math.huge, path=nil}
             for _, ft in ipairs(frontTargets) do
                 local path = yPath(a.tile, ft.tile)
@@ -1722,7 +1476,6 @@ local function startMainScript()
                 actions = actions + 1
             end
         end
-
         -- ┌─ EXECUTE: All moves at once ─────────────────────────
         -- Sort by priority (highest first)
         table.sort(plan, function(a,b) return a.priority > b.priority end)
@@ -1730,7 +1483,6 @@ local function startMainScript()
             safeFire(MoveTroop, p.path)
         end
     end
-
             local function buildSnapshot()
         local country=getCountry(); if not country then return nil end
         local atWar=false; local dip=country:FindFirstChild("Diplomacy"); local enemyColors={}
@@ -1750,7 +1502,6 @@ local function startMainScript()
         end
         return {atWar=atWar,country=country,myColorHex=myHex,myColor=myColor,enemyColors=enemyColors,economy={money=numAttr(country,"money"),manpower=numAttr(country,"manpower")},myUnits=myUnits,enemyUnits=enemyUnits,frontTiles=frontTiles}
     end
-
     local lastFacAt=0
     local function autoFactoryTick(snap)
         if os.clock()-lastFacAt<10 then return end
@@ -1773,7 +1524,6 @@ local function startMainScript()
         if bestCost/math.max(marginal,0.01)>150 and money-bestCost<reserve*2 then return end
         safeFire(PurchaseFactory,bestCity); lastFacAt=os.clock()
     end
-
     local SUPPLY_P={"Infantry Equipment","Anti-Tank","Tank Parts","Fuel"}
     local SUP_CLS={Infantry="Infantry Equipment",AntiTank="Anti-Tank",Tanks="Tank Parts"}
     local sliderSt,refillM={},{}
@@ -1813,7 +1563,6 @@ local function startMainScript()
         for name, share in pairs(desired) do if items[name] then applySlider(items[name],share) end end
         if items["Consumer Goods"] then applySlider(items["Consumer Goods"],math.clamp(1-supTotal-unman,0,1)) end
     end
-
     local ROMAN={I=1,V=5,X=10}
     local function romanToNum(s) local t,p=0,0; for i=#s,1,-1 do local v=ROMAN[s:sub(i,i)] or 0; if v<p then t = t - v else t = t + v; p=v end end; return t end
     local function baseName(n) return (n:gsub("%s+[IVX]+$","")) end
@@ -1829,7 +1578,6 @@ local function startMainScript()
         end
         return true
     end
-
     -- ═══════════════════════════════════════════════════════
     -- SMART RESEARCH ENGINE
     -- Para durumu, savaş fazı, düşman kompozisyonu,
@@ -1868,7 +1616,6 @@ local function startMainScript()
         ["Nuke"]                     = "nuke",
         ["Nuclear Protection"]       = "nuke",
     }
-
     local function getTechCategory(techName)
         local base = baseName(techName)
         return TECH_CATEGORY[base] or "other"
@@ -1881,10 +1628,8 @@ local function startMainScript()
 
         -- Temel: düşük fiyat = yüksek ROI (daha fazla tech alabiliriz)
         roi = roi + math.max(0, 500 - price) * 0.1
-
         -- Tier: düşük tier önce (sinerji zinciri için)
         roi = roi + (4 - math.min(tier, 4)) * 40
-
         -- Savaş fazı bonusları
         if snap.atWar then
             -- Aktif savaşta: askeri tech çok değerli
@@ -1924,14 +1669,12 @@ local function startMainScript()
             if category == "infantry" then roi = roi + 60 end
             if category == "intel"   then roi = roi + 70  end
         end
-
         -- Preset bonusu
         for _, sel in pairs(State.ResearchBases) do
             local selBase = baseName(sel)
             local ndBase  = baseName(nd.Name)
             if selBase == ndBase then roi = roi + 800 end
         end
-
         -- Para durumuna göre: az para = ucuz tech önce
         local moneyRatio = money / math.max(price, 1)
         if moneyRatio < 3 then
@@ -1941,7 +1684,6 @@ local function startMainScript()
             -- Çok para: yüksek tier ve değerli tech'leri al
             roi = roi + tier * 30
         end
-
         -- Sinerji: bu tech başka bir tech'in prereq'u mu?
         -- prereq'u olan tech: araştırılınca daha fazla kapı açılır
         if ResearchCommon.techs then
@@ -1958,7 +1700,6 @@ local function startMainScript()
             end
             roi = roi + opensDoors * 25 -- her kapı açılan tech +25
         end
-
         -- Speed: research hız tech'leri varsa daha hızlı biter
         local techsF = snap.country:FindFirstChild("Techs")
         local resSpeed = techsF and techsF:GetAttribute("researchSpeedMultiplier") or 1
@@ -1966,7 +1707,6 @@ local function startMainScript()
 
         return roi
     end
-
     -- Para yönetimi: ne kadar harcayabiliriz?
     local function calcBudget(money, snap)
         local atWar = snap.atWar
@@ -1979,7 +1719,6 @@ local function startMainScript()
         -- Max tek seferde paranın %60'ını harca
         return math.min(available, money * 0.6)
     end
-
     local lastResBuyAt = 0
     local function autoResearchTick(snap)
         local c = snap.country
@@ -1987,7 +1726,6 @@ local function startMainScript()
         if not techsF then return end
 
         local money = snap.economy.money
-
         -- Slot durumu
         local free, slotted = 0, {}
         local slotsF = c:FindFirstChild("ResearchSlots")
@@ -2001,7 +1739,6 @@ local function startMainScript()
         end
 
         if free <= 0 then return end
-
         -- Önce: satın alınmış ama araştırılmamış tech'leri başlat (ücretsiz)
         for _, nd in ipairs(techsF:GetChildren()) do
             if free <= 0 then break end
@@ -2013,7 +1750,6 @@ local function startMainScript()
                 print("[RES] Starting purchased:", nd.Name)
             end
         end
-
         if free <= 0 then return end
 
         -- Cooldown: çok hızlı satın alma engeli
@@ -2026,7 +1762,6 @@ local function startMainScript()
         -- Araştırılabilir tech'leri topla (prereq karşılanmış, yapılmamış)
         local candidates = {}
         local bestPerBase = {}
-
         for _, nd in ipairs(techsF:GetChildren()) do
             if techDone(nd) or techInProg(nd) or slotted[nd] then continue end
             if nd:GetAttribute("purchased") == true then continue end
@@ -2034,12 +1769,10 @@ local function startMainScript()
 
             local price = nd:GetAttribute("price") or math.huge
             if price > budget then continue end -- parası yok
-
             local tier     = tierOf(nd.Name)
             local base     = baseName(nd.Name)
             local category = getTechCategory(nd.Name)
             local roi      = calcROI(nd, price, tier, category, snap, money)
-
             -- Her base'den en iyi tier'ı seç (önce düşük tier — sinerji)
             local cur = bestPerBase[base]
             if not cur or tier < cur.tier or (tier == cur.tier and roi > cur.roi) then
@@ -2053,7 +1786,6 @@ local function startMainScript()
                 }
             end
         end
-
         -- Kandidatları ROI'ya göre sırala
         for _, e in pairs(bestPerBase) do
             table.insert(candidates, e)
@@ -2065,7 +1797,6 @@ local function startMainScript()
         end)
 
         if #candidates == 0 then return end
-
         -- En iyi tech'leri al (budget dolana kadar)
         local spent = 0
         for _, cand in ipairs(candidates) do
@@ -2074,7 +1805,6 @@ local function startMainScript()
 
             local paid = safeInvoke(TryPurchaseTech, cand.node)
             if not paid then continue end
-
             safeFire(StartResearch, cand.node)
             spent   = spent + cand.price
             free    = free - 1
@@ -2085,7 +1815,6 @@ local function startMainScript()
                 cand.node.Name, cand.tier, cand.price, cand.roi))
         end
     end
-
     local WAR_KW={"attack","fighter","bomber","tank","fleet","naval","military","draft","uranium","atomic","defense","missile","artillery","infantry","armor","combat","war","blitz"}
     local ECO_KW={"factory","productivity","research speed","cost","industry","economy","trade","housing","mobilization","output","civil"}
     local function classifyFocus(f)
@@ -2110,14 +1839,12 @@ local function startMainScript()
         table.sort(eligible,function(a,b) local ra=rank[classifyFocus(a)] or 3; local rb=rank[classifyFocus(b)] or 3; if ra~=rb then return ra<rb end; return numAttr(a,"ppCost")<numAttr(b,"ppCost") end)
         safeInvoke(TryStartFocus,eligible[1])
     end
-
     local function autoArmyTick(snap)
         local c=snap.country; local army=c:FindFirstChild("Army"); if not army then return end
         local clsF=army:FindFirstChild("Classes"); if not clsF then return end
         local target=State.ArmySpawnFocus=="Tank" and "Tanks" or "Infantry"
         for _,cl in ipairs(clsF:GetChildren()) do if cl.Name==target then safeInvoke(TryIncreaseTarget,cl) end end
     end
-
     -- Active tactical thread'leri track et -- toggle kapanınca hepsini kill et
     local activeTacticalThreads = {}
     local function cancelTacticalThreads()
@@ -2126,7 +1853,6 @@ local function startMainScript()
         end
         activeTacticalThreads = {}
     end
-
     task.spawn(function()
         local tacticalRunning = false
         while true do
@@ -2160,7 +1886,6 @@ local function startMainScript()
             task.wait(4)  -- 2s → 4s: daha az çakışma
         end
     end)
-
     local lastNatAt = 0
     task.spawn(function()
         while true do
@@ -2183,38 +1908,35 @@ local function startMainScript()
             task.wait(1)
         end
     end)
-
     local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
     local Window   = Rayfield:CreateWindow({
-        Name             = "Soi-Hub — CTW WW2",
-        LoadingTitle     = "◈ Soi-Hub ◈",
-        LoadingSubtitle  = "Conquer The World WW2",
+        Name             = "vip hub — CTW WW2",
+        LoadingTitle     = "◈ vip hub ◈",
+        LoadingSubtitle  = "Завоевание мира: Вторая мировая война",
         ConfigurationSaving = { Enabled = true, FolderName = nil, FileName = "Soi_CTW_WW2_v5" },
         KeySystem        = false,
     })
-
-    local AutoTab = Window:CreateTab("Automation", 0)
-    AutoTab:CreateToggle({ Name = "Auto Build Factory",      CurrentValue = false, Flag = "AutoFactory",  Callback = function(v) State.AutoFactory    = v end })
-    AutoTab:CreateToggle({ Name = "Auto Production Sliders", CurrentValue = false, Flag = "AutoProd",     Callback = function(v) State.AutoProduction  = v end })
-    AutoTab:CreateSection("Government")
-    AutoTab:CreateDropdown({ Name = "Government Mode", Options = { "War Focused", "Economy Focused" }, CurrentOption = { "War Focused" }, MultipleOptions = false, Flag = "GovMode",
-        Callback = function(opts) State.GovernmentMode = (opts[1] == "Economy Focused") and "Economy" or "War" end })
-    AutoTab:CreateToggle({ Name = "Auto Government Focus",   CurrentValue = false, Flag = "AutoGov",      Callback = function(v) State.AutoGovernment  = v end })
-    AutoTab:CreateSection("Army")
-    AutoTab:CreateDropdown({ Name = "Army Spawn Type", Options = { "Infantry Focus", "Tank Focus" }, CurrentOption = { "Infantry Focus" }, MultipleOptions = false, Flag = "ArmySpawn",
-        Callback = function(opts) State.ArmySpawnFocus = (opts[1] == "Tank Focus") and "Tank" or "Infantry" end })
-    AutoTab:CreateToggle({ Name = "Auto Army Spawn",         CurrentValue = false, Flag = "AutoArmy",     Callback = function(v) State.AutoArmy        = v end })
-    AutoTab:CreateSection("Tactical AI")
-    AutoTab:CreateToggle({ Name = "Smart Army Movement", CurrentValue = false, Flag = "SmartMove", Callback = function(v)
+    local AutoTab = Window:CreateTab("Автоматизация", 0)
+    AutoTab:CreateToggle({ Name = "Автостроительство заводов",      CurrentValue = false, Flag = "AutoFactory",  Callback = function(v) State.AutoFactory    = v end })
+    AutoTab:CreateToggle({ Name = "Автораспределение производства", CurrentValue = false, Flag = "AutoProd",     Callback = function(v) State.AutoProduction  = v end })
+    AutoTab:CreateSection("Правительство")
+    AutoTab:CreateDropdown({ Name = "Приоритет правительства", Options = { "Военный", "Экономический" }, CurrentOption = { "Военный" }, MultipleOptions = false, Flag = "GovMode",
+        Callback = function(opts) State.GovernmentMode = (opts[1] == "Экономический") and "Economy" or "War" end })
+    AutoTab:CreateToggle({ Name = "Автовыбор государственных фокусов",   CurrentValue = false, Flag = "AutoGov",      Callback = function(v) State.AutoGovernment  = v end })
+    AutoTab:CreateSection("Армия")
+    AutoTab:CreateDropdown({ Name = "Тип набираемых войск", Options = { "Пехота", "Танки" }, CurrentOption = { "Пехота" }, MultipleOptions = false, Flag = "ArmySpawn",
+        Callback = function(opts) State.ArmySpawnFocus = (opts[1] == "Танки") and "Tank" or "Infantry" end })
+    AutoTab:CreateToggle({ Name = "Автонабор войск",         CurrentValue = false, Flag = "AutoArmy",     Callback = function(v) State.AutoArmy        = v end })
+    AutoTab:CreateSection("Тактика")
+    AutoTab:CreateToggle({ Name = "Умное управление войсками", CurrentValue = false, Flag = "SmartMove", Callback = function(v)
         State.SmartMovement = v
         if not v then cancelTacticalThreads() end
     end })
-    AutoTab:CreateLabel("HP-based combat sim · Empty tile first · Coordinated attack · 85% win chance required · Capital guard · 30 actions/tick")
-
+    AutoTab:CreateLabel("Оценка боя по здоровью · Захват пустых клеток · Совместные атаки · Защита столицы · До 30 действий за цикл")
     -- ═══ AIR FORCE SECTION ════════════════════════════════════
-    AutoTab:CreateSection("Diplomacy")
+    AutoTab:CreateSection("Дипломатия")
     AutoTab:CreateToggle({
-        Name = "Auto Diplomacy",
+        Name = "Автодипломатия",
         CurrentValue = false,
         Flag = "AutoDip",
         Callback = function(v)
@@ -2223,10 +1945,10 @@ local function startMainScript()
             print("[DIP] Auto Diplomacy " .. (v and "enabled" or "disabled"))
         end
     })
-    AutoTab:CreateLabel("Auto-justifies war on weak neighbors · Declares war when ready · Requests peace if outmatched 2.5x")
-    AutoTab:CreateSection("Missiles")
+    AutoTab:CreateLabel("Подготовка войн со слабыми соседями · Объявление войны · Предложение мира при превосходстве врага в 2,5 раза")
+    AutoTab:CreateSection("Ракеты")
     AutoTab:CreateToggle({
-        Name = "Auto Missile Launch",
+        Name = "Автозапуск ракет",
         CurrentValue = false,
         Flag = "AutoMissile",
         Callback = function(v)
@@ -2234,10 +1956,10 @@ local function startMainScript()
             print("[MSL] Auto Missile Launch " .. (v and "enabled" or "disabled"))
         end
     })
-    AutoTab:CreateLabel("Fires missiles at enemy capitals and high-value targets · Requires silo + ammo · 20s cooldown")
-    AutoTab:CreateSection("Naval Invasion")
+    AutoTab:CreateLabel("Удары по столицам и важным целям · Нужны шахта и ракеты · Интервал 20 секунд")
+    AutoTab:CreateSection("Морской десант")
     AutoTab:CreateToggle({
-        Name         = "Auto Naval Invasion",
+        Name         = "Автоматический морской десант",
         CurrentValue = false,
         Flag         = "AutoNaval",
         Callback     = function(v)
@@ -2249,10 +1971,10 @@ local function startMainScript()
             end
         end
     })
-    AutoTab:CreateLabel("Loads best infantry (no AntiTank/Tank) onto Transport Ships · Sails to enemy capital · Requires Transport Ships in port")
-    AutoTab:CreateSection("Air Force")
+    AutoTab:CreateLabel("Погрузка сильной пехоты в транспорты · Нужны транспортные корабли в порту · Движение и высадка недописаны")
+    AutoTab:CreateSection("Авиация")
     AutoTab:CreateToggle({
-        Name         = "Auto Plane Deployment",
+        Name         = "Авторазвёртывание авиации",
         CurrentValue = false,
         Flag         = "AutoPlanes",
         Callback     = function(v)
@@ -2263,10 +1985,10 @@ local function startMainScript()
             end
         end
     })
-    AutoTab:CreateLabel("Auto-deploys planes to enemy air regions from all airfields · Works for every country")
-    AutoTab:CreateSection("Missile Silo")
+    AutoTab:CreateLabel("Отправка самолётов с аэродромов в воздушные регионы противника")
+    AutoTab:CreateSection("Ракетные шахты")
     AutoTab:CreateToggle({
-        Name         = "Auto Missile Silo Builder",
+        Name         = "Автостроительство ракетных шахт",
         CurrentValue = false,
         Flag         = "AutoSilo",
         Callback     = function(v)
@@ -2274,26 +1996,22 @@ local function startMainScript()
             print("[SILO] Auto Missile Silo Builder " .. (v and "enabled" or "disabled"))
         end
     })
-    AutoTab:CreateLabel("Builds & upgrades silos on best tiles · Avoids front · Requires Ballistic Missiles research · Keeps $20k reserve")
-
-    local ResTab = Window:CreateTab("Research", 0)
-    ResTab:CreateToggle({ Name = "Auto Research", CurrentValue = false, Flag = "AutoResearch", Callback = function(v) State.AutoResearch = v end })
-    ResTab:CreateSection("Research Preset")
+    AutoTab:CreateLabel("Строительство и улучшение шахт вдали от фронта · Нужна технология баллистических ракет · Резерв 20 000")
+    local ResTab = Window:CreateTab("Исследования", 0)
+    ResTab:CreateToggle({ Name = "Автоисследования", CurrentValue = false, Flag = "AutoResearch", Callback = function(v) State.AutoResearch = v end })
+    ResTab:CreateSection("Приоритет исследований")
     ResTab:CreateDropdown({
-        Name = "Select Preset", Options = { "Infantry Meta", "Tank Meta", "Air Meta", "Naval Meta", "Nuke Rush" },
-        CurrentOption = { "Infantry Meta" }, MultipleOptions = false, Flag = "ResearchPreset",
-        Callback = function(opts) applyPreset(opts[1]); Rayfield:Notify({ Title = "◈ Research ◈", Content = opts[1] .. " applied — " .. #State.ResearchBases .. " bases", Duration = 3 }) end,
+        Name = "Выбрать направление", Options = { "Упор на пехоту", "Упор на танки", "Упор на авиацию", "Упор на флот", "Ядерная программа" },
+        CurrentOption = { "Упор на пехоту" }, MultipleOptions = false, Flag = "ResearchPreset",
+        Callback = function(opts) applyPreset(opts[1]); Rayfield:Notify({ Title = "◈ Исследования ◈", Content = opts[1] .. " — выбрано направлений: " .. #State.ResearchBases .. "", Duration = 3 }) end,
     })
-    ResTab:CreateSection("Info")
-    ResTab:CreateLabel("Infantry Meta: Inf Eq · Attack Eq · Armor · Anti-Tank · Support · Fort · Industry")
-    ResTab:CreateLabel("Tank Meta: Tank Parts · Turret · Mech · Anti-Tank · Support · Industry")
-    ResTab:CreateLabel("Selected bases get +1000 priority score.")
-
-    applyPreset("Infantry Meta")
-    Rayfield:Notify({ Title = "◈ Soi-Hub v5.3 ◈", Content = "Smart AI: HP combat sim · Win chance · Empty tile first · Naval · Silo · Planes", Duration = 6 })
-    print("SOI-HUB v5.3 — HP-based tactical AI + Naval + Silo + Planes.")
+    ResTab:CreateSection("Информация")
+    ResTab:CreateLabel("Пехота: снаряжение · Атака · Броня · ПТО · Поддержка · Укрепления · Промышленность")
+    ResTab:CreateLabel("Танки: детали · Башни · Механизация · ПТО · Поддержка · Промышленность")
+    ResTab:CreateLabel("Выбранные направления получают +800 к приоритету.")
+    applyPreset("Упор на пехоту")
+    Rayfield:Notify({ Title = "◈ vip hub v5.3 ◈", Content = "Автоматизация: тактика · Исследования · Десант · Шахты · Авиация", Duration = 6 })
+    print("vip hub v5.3 — HP-based tactical AI + Naval + Silo + Planes.")
 end
 
 startMainScript()
-    
-    
