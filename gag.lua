@@ -1,4 +1,4 @@
--- vip hub v5.3 — Auto Plane Deployment entegre
+-- amirking hub v5.3 — Auto Plane Deployment entegre
 -- Compatibility polyfill
 if not table.find then
     table.find = function(t, val)
@@ -51,6 +51,7 @@ local function startMainScript()
         ["Упор на флот"]    = { "Destroyer", "Battleship", "Submarine", "Transport Ship", "Shipyard", "Industry" },
         ["Ядерная программа"]     = { "Uranium Mining", "Uranium Enrichment", "Nuke", "Nuclear Protection", "Industry" },
     }
+    local latestSnapshot = nil
     local State = {
         AutoFactory     = false, AutoProduction = false, AutoGovernment = false,
         AutoArmy        = false, AutoResearch   = false, SmartMovement  = false,
@@ -1893,6 +1894,7 @@ local function startMainScript()
                 lastNatAt = os.clock()
                 local ok, snap = pcall(buildSnapshot)
                 if ok and snap then
+                    latestSnapshot = snap
                     if State.AutoFactory    then pcall(autoFactoryTick,    snap) end
                     if State.AutoProduction then pcall(autoProductionTick,  snap) end
                     if State.AutoGovernment then pcall(autoGovernmentTick,  snap) end
@@ -1908,21 +1910,311 @@ local function startMainScript()
             task.wait(1)
         end
     end)
-    local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-    local Window   = Rayfield:CreateWindow({
-        Name             = "vip hub — CTW WW2",
-        LoadingTitle     = "◈ vip hub ◈",
-        LoadingSubtitle  = "Завоевание мира: Вторая мировая война",
-        ConfigurationSaving = { Enabled = true, FolderName = nil, FileName = "Soi_CTW_WW2_v5" },
-        KeySystem        = false,
-    })
-    local AutoTab = Window:CreateTab("Автоматизация", 0)
+    -- Black-and-gold native Roblox menu.
+    local gold = Color3.fromRGB(211, 175, 87)
+    local black = Color3.fromRGB(12, 12, 13)
+    local panel = Color3.fromRGB(23, 23, 24)
+    local ink = Color3.fromRGB(241, 234, 216)
+    local muted = Color3.fromRGB(160, 153, 135)
+    local function make(class, props, parent)
+        local obj = Instance.new(class)
+        for k, v in pairs(props) do obj[k] = v end
+        obj.Parent = parent
+        return obj
+    end
+    local function round(obj, radius)
+        make("UICorner", {CornerRadius = UDim.new(0, radius)}, obj)
+    end
+    local function text(parent, value, size, color)
+        return make("TextLabel", {Text = value, BackgroundTransparency = 1, TextWrapped = true,
+            TextSize = size, Font = Enum.Font.Gotham, TextColor3 = color,
+            TextXAlignment = Enum.TextXAlignment.Left}, parent)
+    end
+    local old = CoreGui:FindFirstChild("AmirkingGoldUI")
+    if old then old:Destroy() end
+    local gui = make("ScreenGui", {Name = "AmirkingGoldUI", ResetOnSpawn = false,
+        DisplayOrder = 9000, ZIndexBehavior = Enum.ZIndexBehavior.Sibling}, CoreGui)
+    local root = make("Frame", {AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(720, 470), BackgroundColor3 = black, BorderSizePixel = 0,
+        ClipsDescendants = true}, gui)
+    round(root, 16)
+    make("UIStroke", {Color = gold, Thickness = 1, Transparency = 0.25}, root)
+    local scale = make("UIScale", {Scale = 1}, root)
+    local function fit()
+        local v = gui.AbsoluteSize
+        scale.Scale = math.min(1, math.max(0.1, math.min((v.X - 24) / 720, (v.Y - 24) / 470)))
+        root.Position = UDim2.fromScale(0.5, 0.5)
+    end
+    fit(); gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
+    local top = make("Frame", {Size = UDim2.new(1, 0, 0, 72), BackgroundColor3 = panel,
+        BorderSizePixel = 0, Active = true}, root)
+    local logo = text(top, "AK", 26, gold)
+    logo.Position = UDim2.fromOffset(22, 17); logo.Size = UDim2.fromOffset(50, 36); logo.Font = Enum.Font.GothamBold
+    local title = text(top, "AMIRKING HUB", 20, ink)
+    title.Position = UDim2.fromOffset(85, 14); title.Size = UDim2.fromOffset(450, 27); title.Font = Enum.Font.GothamBold
+    local sub = text(top, "УПРАВЛЕНИЕ И АВТОМАТИЗАЦИЯ", 10, gold)
+    sub.Position = UDim2.fromOffset(85, 43); sub.Size = UDim2.fromOffset(450, 18)
+    make("Frame", {BackgroundColor3 = gold, BackgroundTransparency = 0.65, BorderSizePixel = 0,
+        Position = UDim2.fromOffset(0, 71), Size = UDim2.new(1, 0, 0, 1)}, top)
+    local close = make("TextButton", {Text = "×", TextSize = 28, TextColor3 = gold,
+        BackgroundTransparency = 1, Position = UDim2.new(1, -52, 0, 15), Size = UDim2.fromOffset(36, 36)}, top)
+    close.Activated:Connect(function() root.Visible = false end)
+    local sidebar = make("ScrollingFrame", {BackgroundTransparency = 1, BorderSizePixel = 0,
+        CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        ScrollBarThickness = 2, ScrollBarImageColor3 = gold, Position = UDim2.fromOffset(14, 88),
+        Size = UDim2.new(0, 164, 1, -136)}, root)
+    make("UIListLayout", {Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder}, sidebar)
+    local foot = text(root, "AK  /  ЧЁРНОЕ ЗОЛОТО", 10, muted)
+    foot.Position = UDim2.new(0, 22, 1, -30); foot.Size = UDim2.fromOffset(170, 16)
+    local Rayfield = {}
+    local tabs = {}
+    function Rayfield:IsVisible() return root.Visible end
+    function Rayfield:SetVisibility(v) root.Visible = v == true end
+    function Rayfield:CreateWindow(_) return self end
+    function Rayfield:Notify(config)
+        local toast = make("Frame", {AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -12, 1, -12),
+            Size = UDim2.new(0.8, 0, 0, 94), BackgroundColor3 = panel, BorderSizePixel = 0}, gui)
+        make("UISizeConstraint", {MaxSize = Vector2.new(390, 94)}, toast)
+        round(toast, 12); make("UIStroke", {Color = gold, Transparency = 0.4}, toast)
+        local h = text(toast, config.Title or "amirking hub", 13, gold)
+        h.Position = UDim2.fromOffset(14, 8); h.Size = UDim2.new(1, -28, 0, 24)
+        local b = text(toast, config.Content or "", 12, ink)
+        b.Position = UDim2.fromOffset(14, 34); b.Size = UDim2.new(1, -28, 0, 48)
+        task.delay(config.Duration or 4, function() toast:Destroy() end)
+    end
+    local function invoke(fn, v)
+        if fn then local ok, err = pcall(fn, v); if not ok then warn("[amirking hub] " .. tostring(err)) end end
+    end
+    function Rayfield:CreateTab(name, _)
+        local page = make("ScrollingFrame", {Name = name, BackgroundTransparency = 1, BorderSizePixel = 0,
+            Position = UDim2.fromOffset(194, 88), Size = UDim2.new(1, -210, 1, -106),
+            CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ScrollBarThickness = 3, ScrollBarImageColor3 = gold, Visible = false}, root)
+        make("UIPadding", {PaddingRight = UDim.new(0, 9), PaddingBottom = UDim.new(0, 14)}, page)
+        make("UIListLayout", {Padding = UDim.new(0, 9), SortOrder = Enum.SortOrder.LayoutOrder}, page)
+        local nav = make("TextButton", {Text = name, TextSize = 13, Font = Enum.Font.GothamMedium,
+            TextColor3 = muted, BackgroundColor3 = black, BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 0, 44), LayoutOrder = #tabs + 1}, sidebar)
+        round(nav, 9)
+        local tab = {page = page, nav = nav, order = 0}
+        table.insert(tabs, tab)
+        local function selectTab()
+            for _, t in ipairs(tabs) do
+                t.page.Visible = t == tab
+                t.nav.TextColor3 = t == tab and gold or muted
+                t.nav.BackgroundColor3 = t == tab and Color3.fromRGB(47, 41, 26) or black
+            end
+        end
+        nav.Activated:Connect(selectTab)
+        if #tabs == 1 then selectTab() end
+        local function row(height)
+            tab.order = tab.order + 1
+            local f = make("Frame", {Size = UDim2.new(1, 0, 0, height), BackgroundColor3 = panel,
+                BorderSizePixel = 0, LayoutOrder = tab.order}, page)
+            round(f, 10); return f
+        end
+        function tab:CreateSection(value)
+            local f = row(30); f.BackgroundTransparency = 1
+            local l = text(f, value, 12, gold); l.Font = Enum.Font.GothamBold; l.Size = UDim2.fromScale(1, 1)
+        end
+        function tab:CreateLabel(value)
+            local f = row(0); f.AutomaticSize = Enum.AutomaticSize.Y
+            make("UIPadding", {PaddingTop = UDim.new(0, 10), PaddingBottom = UDim.new(0, 10),
+                PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14)}, f)
+            local l = text(f, value, 11, muted)
+            l.Size = UDim2.new(1, 0, 0, 0); l.AutomaticSize = Enum.AutomaticSize.Y
+            return {Set = function(_, value) l.Text = tostring(value) end}
+        end
+        function tab:CreateToggle(config)
+            local f = row(58)
+            local l = text(f, config.Name, 13, ink)
+            l.Position = UDim2.fromOffset(15, 0); l.Size = UDim2.new(1, -94, 1, 0)
+            local track = make("Frame", {Position = UDim2.new(1, -66, 0.5, -13),
+                Size = UDim2.fromOffset(48, 26), BorderSizePixel = 0}, f); round(track, 13)
+            local knob = make("Frame", {Size = UDim2.fromOffset(18, 18), BorderSizePixel = 0}, track); round(knob, 9)
+            local hit = make("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1)}, f)
+            local value = config.CurrentValue == true
+            local function paint()
+                local info = TweenInfo.new(0.16)
+                TweenService:Create(track, info, {BackgroundColor3 = value and gold or Color3.fromRGB(65, 63, 57)}):Play()
+                TweenService:Create(knob, info, {Position = UDim2.fromOffset(value and 26 or 4, 4),
+                    BackgroundColor3 = value and black or Color3.fromRGB(190, 184, 170)}):Play()
+            end
+            paint()
+            hit.Activated:Connect(function() value = not value; paint(); invoke(config.Callback, value) end)
+        end
+        function tab:CreateDropdown(config)
+            local f = row(0); f.AutomaticSize = Enum.AutomaticSize.Y
+            make("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder}, f)
+            local header = make("TextButton", {Text = "", BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 66), LayoutOrder = 0}, f)
+            local h = text(header, config.Name, 11, muted)
+            h.Position = UDim2.fromOffset(15, 8); h.Size = UDim2.new(1, -30, 0, 20)
+            local selected = config.CurrentOption and config.CurrentOption[1] or config.Options[1]
+            local v = text(header, selected .. "  ▾", 13, gold)
+            v.Position = UDim2.fromOffset(15, 30); v.Size = UDim2.new(1, -30, 0, 25)
+            local options, opened = {}, false
+            local function show(state)
+                opened = state; for _, opt in ipairs(options) do opt.Visible = state end
+            end
+            for i, option in ipairs(config.Options) do
+                local choice = option
+                local b = make("TextButton", {Text = choice, TextSize = 12, Font = Enum.Font.Gotham,
+                    TextColor3 = ink, BackgroundColor3 = Color3.fromRGB(32, 31, 27), BorderSizePixel = 0,
+                    Size = UDim2.new(1, 0, 0, 36), LayoutOrder = i, Visible = false}, f)
+                table.insert(options, b)
+                b.Activated:Connect(function() v.Text = choice .. "  ▾"; show(false); invoke(config.Callback, {choice}) end)
+            end
+            header.Activated:Connect(function() show(not opened) end)
+        end
+        return tab
+    end
+
+    local Window = Rayfield:CreateWindow()
+
+    local StatusTab = Window:CreateTab("Статус", 0)
+    StatusTab:CreateSection("Состояние страны")
+    local statusCountry = StatusTab:CreateLabel("Страна: ожидание данных…")
+    local statusWar = StatusTab:CreateLabel("Война: —")
+    local statusMoney = StatusTab:CreateLabel("Деньги: —")
+    local statusManpower = StatusTab:CreateLabel("Людские ресурсы: —")
+    local statusArmy = StatusTab:CreateLabel("Армия: —")
+    StatusTab:CreateSection("Активные функции")
+    local statusFeatures = StatusTab:CreateLabel("Нет включённых функций")
+    local featureNames = {
+        {"AutoFactory", "Строительство заводов"},
+        {"AutoProduction", "Распределение производства"},
+        {"AutoGovernment", "Государственные фокусы"},
+        {"AutoArmy", "Набор войск"},
+        {"SmartMovement", "Управление войсками"},
+        {"AutoDiplomacy", "Дипломатия"},
+        {"AutoMissile", "Запуск ракет"},
+        {"AutoNaval", "Морской десант"},
+        {"AutoPlanes", "Развёртывание авиации"},
+        {"AutoSilo", "Строительство шахт"},
+        {"AutoResearch", "Исследования"},
+    }
+    task.spawn(function()
+        while gui.Parent do
+            if StatusTab.page.Visible and root.Visible then
+                local country = getCountry()
+                local snap = latestSnapshot
+                if country and snap and snap.country == country then
+                    statusCountry:Set("Страна: " .. country.Name)
+                    local enemies = {}
+                    for _, enemy in pairs(snap.enemyColors) do table.insert(enemies, enemy.Name) end
+                    table.sort(enemies)
+                    statusWar:Set(snap.atWar and ("Война: да\nПротивники: " .. table.concat(enemies, ", ")) or "Война: нет")
+                    statusMoney:Set(string.format("Деньги: %.0f", snap.economy.money))
+                    statusManpower:Set(string.format("Людские ресурсы: %.0f", snap.economy.manpower))
+                    local infantry, tanks, anti = 0, 0, 0
+                    for _, unit in ipairs(snap.myUnits) do
+                        if unit.class == "Tanks" then tanks = tanks + 1
+                        elseif unit.class == "AntiTank" then anti = anti + 1
+                        else infantry = infantry + 1 end
+                    end
+                    statusArmy:Set(string.format("Войск: %d\nПехота: %d · Танки: %d · ПТО: %d", #snap.myUnits, infantry, tanks, anti))
+                else
+                    statusCountry:Set(country and ("Страна: " .. country.Name .. " · ожидание данных…") or "Страна не выбрана")
+                    statusWar:Set("Война: —"); statusMoney:Set("Деньги: —")
+                    statusManpower:Set("Людские ресурсы: —"); statusArmy:Set("Армия: —")
+                end
+                local enabled = {}
+                for _, feature in ipairs(featureNames) do
+                    if State[feature[1]] then table.insert(enabled, "● " .. feature[2]) end
+                end
+                statusFeatures:Set(#enabled > 0 and table.concat(enabled, "\n") or "Нет включённых функций")
+            end
+            task.wait(2)
+        end
+    end)
+
+    -- Floating menu button, independent of the Rayfield window.
+    local UserInputService = game:GetService("UserInputService")
+    local oldButton = CoreGui:FindFirstChild("AmirkingMenuButton")
+    if oldButton then oldButton:Destroy() end
+
+    local buttonGui = Instance.new("ScreenGui")
+    buttonGui.Name = "AmirkingMenuButton"
+    buttonGui.ResetOnSpawn = false
+    buttonGui.DisplayOrder = 10000
+    buttonGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    buttonGui.Parent = CoreGui
+
+    local menuButton = Instance.new("TextButton")
+    menuButton.Name = "ToggleMenu"
+    menuButton.Size = UDim2.fromOffset(58, 58)
+    menuButton.Position = UDim2.new(0, 18, 0.5, -29)
+    menuButton.BackgroundColor3 = Color3.fromRGB(17, 16, 13)
+    menuButton.Text = "AK"
+    menuButton.TextColor3 = Color3.fromRGB(240, 218, 160)
+    menuButton.TextSize = 23
+    menuButton.Font = Enum.Font.GothamBold
+    menuButton.AutoButtonColor = true
+    menuButton.Active = true
+    menuButton.Parent = buttonGui
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(1, 0)
+    corner.Parent = menuButton
+    local border = Instance.new("UIStroke")
+    border.Color = Color3.fromRGB(211, 175, 87)
+    border.Thickness = 2
+    border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    border.Parent = menuButton
+
+    local dragging = false
+    local moved = false
+    local dragInput, dragStart, startPosition
+    local function clampButton(x, y)
+        local size = buttonGui.AbsoluteSize
+        return math.clamp(x, 0, math.max(0, size.X - 58)),
+               math.clamp(y, 0, math.max(0, size.Y - 58))
+    end
+    menuButton.InputBegan:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+            and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        if dragging then return end
+        dragging = true
+        moved = false
+        dragInput = input
+        dragStart = input.Position
+        startPosition = menuButton.AbsolutePosition - buttonGui.AbsolutePosition
+    end)
+    local inputChanged = UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        local touch = dragInput.UserInputType == Enum.UserInputType.Touch
+        if touch and input ~= dragInput then return end
+        if not touch and input.UserInputType ~= Enum.UserInputType.MouseMovement then return end
+        local delta = input.Position - dragStart
+        if delta.Magnitude > 8 then moved = true end
+        if moved then
+            local x, y = clampButton(startPosition.X + delta.X, startPosition.Y + delta.Y)
+            menuButton.Position = UDim2.fromOffset(x, y)
+        end
+    end)
+    local inputEnded = UserInputService.InputEnded:Connect(function(input)
+        if not dragging or input ~= dragInput then return end
+        dragging = false
+        if moved then return end
+        if type(Rayfield.SetVisibility) ~= "function" or type(Rayfield.IsVisible) ~= "function" then
+            warn("[amirking hub] Библиотека меню не поддерживает переключение видимости")
+            return
+        end
+        Rayfield:SetVisibility(not Rayfield:IsVisible())
+    end)
+    buttonGui.Destroying:Connect(function()
+        inputChanged:Disconnect()
+        inputEnded:Disconnect()
+    end)
+
+    local AutoTab = Window:CreateTab("Экономика", 0)
     AutoTab:CreateToggle({ Name = "Автостроительство заводов",      CurrentValue = false, Flag = "AutoFactory",  Callback = function(v) State.AutoFactory    = v end })
     AutoTab:CreateToggle({ Name = "Автораспределение производства", CurrentValue = false, Flag = "AutoProd",     Callback = function(v) State.AutoProduction  = v end })
     AutoTab:CreateSection("Правительство")
     AutoTab:CreateDropdown({ Name = "Приоритет правительства", Options = { "Военный", "Экономический" }, CurrentOption = { "Военный" }, MultipleOptions = false, Flag = "GovMode",
         Callback = function(opts) State.GovernmentMode = (opts[1] == "Экономический") and "Economy" or "War" end })
     AutoTab:CreateToggle({ Name = "Автовыбор государственных фокусов",   CurrentValue = false, Flag = "AutoGov",      Callback = function(v) State.AutoGovernment  = v end })
+    AutoTab = Window:CreateTab("Армия", 0)
     AutoTab:CreateSection("Армия")
     AutoTab:CreateDropdown({ Name = "Тип набираемых войск", Options = { "Пехота", "Танки" }, CurrentOption = { "Пехота" }, MultipleOptions = false, Flag = "ArmySpawn",
         Callback = function(opts) State.ArmySpawnFocus = (opts[1] == "Танки") and "Tank" or "Infantry" end })
@@ -1934,6 +2226,7 @@ local function startMainScript()
     end })
     AutoTab:CreateLabel("Оценка боя по здоровью · Захват пустых клеток · Совместные атаки · Защита столицы · До 30 действий за цикл")
     -- ═══ AIR FORCE SECTION ════════════════════════════════════
+    AutoTab = Window:CreateTab("Дипломатия", 0)
     AutoTab:CreateSection("Дипломатия")
     AutoTab:CreateToggle({
         Name = "Автодипломатия",
@@ -1946,6 +2239,8 @@ local function startMainScript()
         end
     })
     AutoTab:CreateLabel("Подготовка войн со слабыми соседями · Объявление войны · Предложение мира при превосходстве врага в 2,5 раза")
+    AutoTab = Window:CreateTab("Вооружение", 0)
+    local weaponsTab = AutoTab
     AutoTab:CreateSection("Ракеты")
     AutoTab:CreateToggle({
         Name = "Автозапуск ракет",
@@ -1972,6 +2267,7 @@ local function startMainScript()
         end
     })
     AutoTab:CreateLabel("Погрузка сильной пехоты в транспорты · Нужны транспортные корабли в порту · Движение и высадка недописаны")
+    AutoTab = Window:CreateTab("Авиация", 0)
     AutoTab:CreateSection("Авиация")
     AutoTab:CreateToggle({
         Name         = "Авторазвёртывание авиации",
@@ -1986,6 +2282,7 @@ local function startMainScript()
         end
     })
     AutoTab:CreateLabel("Отправка самолётов с аэродромов в воздушные регионы противника")
+    AutoTab = weaponsTab
     AutoTab:CreateSection("Ракетные шахты")
     AutoTab:CreateToggle({
         Name         = "Автостроительство ракетных шахт",
@@ -2010,8 +2307,8 @@ local function startMainScript()
     ResTab:CreateLabel("Танки: детали · Башни · Механизация · ПТО · Поддержка · Промышленность")
     ResTab:CreateLabel("Выбранные направления получают +800 к приоритету.")
     applyPreset("Упор на пехоту")
-    Rayfield:Notify({ Title = "◈ vip hub v5.3 ◈", Content = "Автоматизация: тактика · Исследования · Десант · Шахты · Авиация", Duration = 6 })
-    print("vip hub v5.3 — HP-based tactical AI + Naval + Silo + Planes.")
+    Rayfield:Notify({ Title = "◈ amirking hub v5.3 ◈", Content = "Автоматизация: тактика · Исследования · Десант · Шахты · Авиация", Duration = 6 })
+    print("amirking hub v5.3 — HP-based tactical AI + Naval + Silo + Planes.")
 end
 
 startMainScript()
